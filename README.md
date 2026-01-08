@@ -6,6 +6,7 @@ choco install kubernetes-cli minikube
 
 minikube start --cpus 4 --memory 8192
 minikube addons enable metrics-server
+minikube addons enable ingress
 minikube dashboard
 ```
 
@@ -43,7 +44,7 @@ kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 909
 helm install signoz signoz/signoz --namespace monitoring
 $POD_NAME = kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=signoz,app.kubernetes.io/instance=signoz,app.kubernetes.io/component=signoz" -o jsonpath="{.items[0].metadata.name}"
 
-kubectl --namespace monitoring port-forward $POD_NAME 8080:8080
+kubectl --namespace monitoring port-forward $POD_NAME 8085:8085
 ```
 
 # frontend 
@@ -56,4 +57,15 @@ kubectl apply -f frontend-deployment.yaml
 kubectl apply -f frontend-service.yaml
 
 minikube service frontend-service -n frontend --url
+
+kubectl port-forward -n signoz svc/signoz-otel-collector 4318:4318
+
+
+```
+
+# collector
+```
+kubectl edit configmap signoz-otel-collector -n monitoring
+kubectl rollout restart deployment signoz-otel-collector -n monitoring
+kubectl port-forward -n monitoring svc/signoz-otel-collector 4318:4318
 ```

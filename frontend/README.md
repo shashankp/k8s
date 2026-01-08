@@ -73,3 +73,14 @@ export default defineConfig([
   },
 ])
 ```
+
+
+# OTel
+
+```
+npm install --save @opentelemetry/api@^1.9.0
+npm install --save @opentelemetry/sdk-node@^0.208.0
+npm install --save @opentelemetry/auto-instrumentations-node@^0.67.0
+npm install --save @opentelemetry/exporter-trace-otlp-http@^0.208.0
+
+```
