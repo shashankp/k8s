@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signoz-mcp-server
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signoz-mcp
+  template:
+    metadata:
+      labels:
+        app: signoz-mcp
+    spec:
+      containers:
+      - name: mcp-server
+        image: signoz-mcp-server:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5002  # Default port for SigNoz MCP
+        env:
+        - name: SIGNOZ_HOST
+          value: "http://signoz-frontend.monitoring.svc.cluster.local:3301"
+        - name: SIGNOZ_API_KEY
+          value: "your-api-key-here"
+        - name: MCP_SERVER_PORT
+          value: "5002"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signoz-mcp-service
+  namespace: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app: signoz-mcp
+  ports:
+    - port: 5002
+      targetPort: 5002
