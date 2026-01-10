@@ -1,38 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { Routes, Route } from 'react-router-dom'
+import { useState } from 'react'
 
-function App() {
+function BrokenComponent() {
+  throw new Error('Rendering error test');
+  return <div>This won't render</div>;
+}
+
+function Home() {
   const [count, setCount] = useState(0)
+  const [showBroken, setShowBroken] = useState(false);
 
-  function onClickHandler() {
-    setCount((count) => count + 1)
+  const testError = () => {
+    throw new Error("testError");
+  }
+
+  const testFetch = () => {
+    fetch('https://jsonplaceholder.typicode.com/posts/1')
+      .then(res => console.log('Response:', res.status))
   }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => onClickHandler()}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <h1>Home</h1>
+      <button onClick={() => setCount(count + 1)}>count is {count}</button>
+      <button onClick={testFetch}>Test Fetch</button>
+      <button onClick={testError}>Test Error</button>
+      
+      <button onClick={() => setShowBroken(true)}>Trigger Render Error</button>
+      {showBroken && <BrokenComponent />}
     </>
+  )
+}
+
+function NotFound() {
+  return <h1>404 - Page Not Found</h1>
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   )
 }
 
