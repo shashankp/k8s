@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signoz-mcp-server
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signoz-mcp-server
+  template:
+    metadata:
+      labels:
+        app: signoz-mcp-server
+    spec:
+      containers:
+      - name: signoz-mcp-server
+        image: signoz/signoz-mcp-server:latest 
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: SIGNOZ_URL
+          value: "http://signoz.monitoring.svc.cluster.local:8080"
+        - name: SIGNOZ_API_KEY
+          value: "AkG4un7/k3doxSoRxQJvdX1dU3/aDJHyaUi4shCEON0="
+        - name: MCP_SERVER_PORT
+          value: "8000"
+        - name: TRANSPORT_MODE
+          value: "http"
+        - name: LOG_LEVEL
+          value: "info"

@@ -69,6 +69,8 @@ minikube service frontend-service -n frontend --url
 kubectl edit configmap signoz-otel-collector -n monitoring
 kubectl rollout restart deployment signoz-otel-collector -n monitoring
 kubectl port-forward -n monitoring svc/signoz-otel-collector 4318:4318
+
+kubectl port-forward -n monitoring svc/signoz-mcp-server 8000:8000
 ```
 
 # signoz mcp
@@ -79,4 +81,9 @@ git clone https://github.com/SigNoz/signoz-mcp-server.git
 cd signoz-mcp-server
 docker build -t signoz-mcp-server:latest .
 minikube image load signoz-mcp-server:latest
+
+kubectl port-forward -n monitoring svc/signoz-mcp-server 8000:8000
+
+Invoke-RestMethod -Uri "http://localhost:8000/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
+
 ```
