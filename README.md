@@ -87,3 +87,18 @@ kubectl port-forward -n monitoring svc/signoz-mcp-server 8000:8000
 Invoke-RestMethod -Uri "http://localhost:8000/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
 
 ```
+
+
+# backend
+```
+docker build -t backend:latest .
+
+kubectl create namespace backend
+kubectl apply -f backend-deployment.yaml
+kubectl apply -f backend-service.yaml
+
+kubectl rollout restart deployment backend
+
+kubectl port-forward -n backend svc/backend 8081:80
+
+```
