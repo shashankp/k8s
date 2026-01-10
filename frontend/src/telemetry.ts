@@ -8,7 +8,7 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { trace } from '@opentelemetry/api';
 
 const exporter = new OTLPTraceExporter({
-  url: 'http://localhost:4318/v1/traces',
+  url: 'http://collector.local/v1/traces',
 });
 
 const provider = new WebTracerProvider({

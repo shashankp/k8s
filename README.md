@@ -10,10 +10,25 @@ minikube addons enable ingress
 ```
 
 ## monitor
+
+- Add to Hosts
+```
+127.0.0.1 frontend.local
+127.0.0.1 backend.local
+127.0.0.1 grafana.local
+127.0.0.1 prometheus.local
+127.0.0.1 signoz.local
+127.0.0.1 collector.local
+127.0.0.1 signozmcp.local
+```
+
 ```
 minikube addons enable metrics-server
 minikube dashboard
 kubectl top pods -A
+
+kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{\"spec\":{\"type\":\"LoadBalancer\"}}'
+kubectl get svc ingress-nginx-controller -n ingress-nginx
 ```
 
 ## helm
@@ -84,7 +99,21 @@ minikube image load signoz-mcp-server:latest
 
 kubectl port-forward -n monitoring svc/signoz-mcp-server 8000:8000
 
-Invoke-RestMethod -Uri "http://localhost:8000/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
+Invoke-RestMethod -Uri "http://signozmcp.local/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
+
+{
+  "mcpServers": {
+    "signoz": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://signozmcp.local/mcp",
+		"--allow-http"
+      ]
+    }
+  }
+}
 
 ```
 

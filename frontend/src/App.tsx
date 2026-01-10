@@ -33,7 +33,6 @@ function Home() {
       }
 
       const res = await fetch(`${baseUrl}/weatherforecast`)
-      //const res = await fetch('http://localhost:8081/weatherforecast')
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`)
