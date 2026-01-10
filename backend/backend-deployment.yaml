@@ -10,6 +10,8 @@ spec:
       app: backend
   template:
     metadata:
+      annotations:
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
       labels:
         app: backend
     spec:
