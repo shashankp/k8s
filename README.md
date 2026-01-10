@@ -97,7 +97,7 @@ kubectl create namespace backend
 kubectl apply -f backend-deployment.yaml
 kubectl apply -f backend-service.yaml
 
-kubectl rollout restart deployment backend
+kubectl rollout restart -n backend deployment backend
 
 kubectl port-forward -n backend svc/backend 8081:80
 
