@@ -1,0 +1,10 @@
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: headlamp.local
+      paths:
+        - path: /
+          type: ImplementationSpecific

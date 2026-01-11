@@ -1,5 +1,17 @@
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("backend"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
+        }));
+        
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

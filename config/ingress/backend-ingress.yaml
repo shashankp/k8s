@@ -1,17 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: frontend-ingress
-  namespace: frontend
+  name: backend-ingress
+  namespace: backend
 spec:
+  ingressClassName: nginx
   rules:
-  - host: frontend.local
+  - host: backend.local
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend-service
+            name: backend-service
             port:
               number: 80
