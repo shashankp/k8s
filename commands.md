@@ -18,32 +18,34 @@ helm repo update
 # 3. Install monitoring
 Write-Host "Installing monitoring tools..." -ForegroundColor Green
 helm upgrade --install headlamp headlamp/headlamp --namespace monitoring --create-namespace -f headlamp-values.yaml
+kubectl create token headlamp --namespace monitoring
 
-helm upgrade --install signoz signoz/signoz --namespace monitoring --create-namespace
+helm upgrade --install signoz signoz/signoz --namespace monitoring --create-namespace 
 helm upgrade --install signoz signoz/signoz --namespace monitoring --create-namespace -f signoz-values.yaml
+kubectl rollout restart deployment signoz-otel-collector -n monitoring
 
 
 # 4. Build and deploy apps
 Write-Host "Building frontend..." -ForegroundColor Green
 cd frontend
 docker build -t frontend:latest .
-kubectl create namespace frontend --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace frontend
 kubectl apply -f frontend-deployment.yaml
 kubectl apply -f frontend-service.yaml
 
 Write-Host "Building backend..." -ForegroundColor Green
 cd ../backend
 docker build -t backend:latest .
-kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace backend
 kubectl apply -f backend-deployment.yaml
 kubectl apply -f backend-service.yaml
 
+cd ../config/signoz
+kubectl apply -f signoz-mcp.deployment.yaml
+kubectl apply -f signoz-mcp.service.yaml
+
 # 5. Apply ingresses
 Write-Host "Configuring ingresses..." -ForegroundColor Green
-cd ../config/ingress
-kubectl apply -f frontend-ingress.yaml
-kubectl apply -f backend-ingress.yaml
-kubectl apply -f monitoring-ingress.yaml
 
 Write-Host "Setup complete!" -ForegroundColor Green
 Write-Host "Don't forget to add these to your hosts file:" -ForegroundColor Yellow

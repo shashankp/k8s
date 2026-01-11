@@ -23,7 +23,7 @@ spec:
         - name: SIGNOZ_URL
           value: "http://signoz.monitoring.svc.cluster.local:8080"
         - name: SIGNOZ_API_KEY
-          value: "AkG4un7/k3doxSoRxQJvdX1dU3/aDJHyaUi4shCEON0="
+          value: "6YQ+9dddHk4rX+L8zvleA9ySiuuHssTD49uxFgyIQkQ="
         - name: MCP_SERVER_PORT
           value: "8000"
         - name: TRANSPORT_MODE

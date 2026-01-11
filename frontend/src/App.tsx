@@ -68,7 +68,7 @@ function Home() {
         <button onClick={() => setShowBroken(true)}>Trigger Render Error</button>
         {showBroken && <BrokenComponent />}
         <button onClick={onClickHandler} disabled={loading}>
-          {loading ? 'Loading…' : `Fetch weather (${count})`}
+          {loading ? 'Loading…' : `Fetch weather`}
         </button>
       </div>
 
