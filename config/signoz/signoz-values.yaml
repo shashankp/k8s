@@ -1,0 +1,11 @@
+otelCollector:
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            cors:
+              allowed_origins:
+                - "http://frontend.local"
+              allowed_headers:
+                - "*"

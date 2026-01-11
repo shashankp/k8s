@@ -18,7 +18,10 @@ helm repo update
 # 3. Install monitoring
 Write-Host "Installing monitoring tools..." -ForegroundColor Green
 helm upgrade --install headlamp headlamp/headlamp --namespace monitoring --create-namespace -f headlamp-values.yaml
+
 helm upgrade --install signoz signoz/signoz --namespace monitoring --create-namespace
+helm upgrade --install signoz signoz/signoz --namespace monitoring --create-namespace -f signoz-values.yaml
+
 
 # 4. Build and deploy apps
 Write-Host "Building frontend..." -ForegroundColor Green
@@ -44,4 +47,4 @@ kubectl apply -f monitoring-ingress.yaml
 
 Write-Host "Setup complete!" -ForegroundColor Green
 Write-Host "Don't forget to add these to your hosts file:" -ForegroundColor Yellow
-Write-Host "127.0.0.1 frontend.local backend.local headlamp.local signoz.local"
+Write-Host "127.0.0.1 frontend.local backend.local headlamp.local signoz.local collector.local"

@@ -4,6 +4,7 @@ metadata:
   name: monitoring-ingress
   namespace: monitoring
 spec:
+  ingressClassName: nginx
   rules:
   # - host: grafana.local
   #   http:

@@ -79,6 +79,8 @@ minikube service frontend-service -n frontend --url
 ```
 kubectl edit configmap signoz-otel-collector -n monitoring
 kubectl rollout restart deployment signoz-otel-collector -n monitoring
+
+
 kubectl port-forward -n monitoring svc/signoz-otel-collector 4318:4318
 
 kubectl port-forward -n monitoring svc/signoz-mcp-server 8000:8000
