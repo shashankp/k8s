@@ -56,3 +56,10 @@ curl -X POST http://signozmcp.local/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
 
 Invoke-RestMethod -Uri "http://signozmcp.local/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
+
+# 7. Tuning
+kubectl exec -it -n backend <pod> -- printenv|grep gc
+helm install loadtest ./loadtest
+helm upgrade --install loadtest ./loadtest --force
+kubectl logs job/loadtest-k6 -f
+

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-k6-script
+data:
+  test.js: |
+    import http from 'k6/http';
+    import { check, sleep } from 'k6';
+
+    export let options = {
+      vus: {{ .Values.test.vus }},
+      duration: '{{ .Values.test.duration }}',
+    };
+
+    export default function () {
+      const url = 'http://{{ .Values.target.host }}:{{ .Values.target.port }}{{ .Values.target.path }}';
+
+      const res = http.get(url);
+
+      check(res, {
+        'status is 200': (r) => r.status === 200,
+      });
+
+      sleep(1);
+    }

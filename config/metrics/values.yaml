@@ -1,0 +1,25 @@
+replicas: 1
+
+args:
+  - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
+  - --kubelet-use-node-status-port
+  - --metric-resolution=15s
+  - --kubelet-insecure-tls
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 100Mi
+  limits:
+    cpu: 100m
+    memory: 200Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true

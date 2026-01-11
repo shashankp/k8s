@@ -1,0 +1,6 @@
+apiVersion: v2
+name: k6-loadtest
+description: Simple in-cluster k6 test for Web API
+type: application
+version: 0.1.0
+appVersion: "0.47.0"
