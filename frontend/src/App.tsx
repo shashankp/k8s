@@ -21,6 +21,18 @@ function Home() {
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
+  const stressTest = async (endpoint: string) => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL
+      const res = await fetch(`${baseUrl}/${endpoint}`, {
+        method: 'POST'
+      })
+      console.log(`${endpoint} completed:`, await res.text())
+    } catch (err) {
+      console.error(`${endpoint} failed:`, err)
+    }
+  }
+
   const onClickHandler = async (): Promise<void> => {
     setCount((c) => c + 1)
     setLoading(true)
@@ -67,6 +79,10 @@ function Home() {
         <button onClick={testError}>Test Error</button>
         <button onClick={() => setShowBroken(true)}>Trigger Render Error</button>
         {showBroken && <BrokenComponent />}
+        <button onClick={() => stressTest('stress-cpu')}>Stress CPU</button>
+        <button onClick={() => stressTest('stress-memory')}>Stress Memory</button>
+        <button onClick={() => stressTest('stress-disk')}>Stress Disk</button>
+        <button onClick={() => stressTest('stress-io')}>Stress I/O</button>
         <button onClick={onClickHandler} disabled={loading}>
           {loading ? 'Loading…' : `Fetch weather`}
         </button>

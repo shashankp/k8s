@@ -58,6 +58,61 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+app.MapPost("/stress-cpu", () =>
+{
+    var duration = TimeSpan.FromSeconds(10);
+    var end = DateTime.UtcNow.Add(duration);
+    
+    while (DateTime.UtcNow < end)
+    {
+        // CPU-intensive calculation
+        Math.Sqrt(Random.Shared.NextDouble());
+    }
+    
+    return "CPU stress test completed";
+});
+
+app.MapPost("/stress-memory", () =>
+{
+    var list = new List<byte[]>();
+    for (int i = 0; i < 7; i++)
+    {
+        list.Add(new byte[10_000_000]); // 10MB each
+    }
+    Thread.Sleep(10000);
+    return "Memory stress completed";
+});
+
+app.MapPost("/stress-disk", () =>
+{
+    var path = Path.GetTempFileName();
+    using (var fs = new FileStream(path, FileMode.Create))
+    {
+        var buffer = new byte[1024 * 1024]; // 1MB
+        for (int i = 0; i < 200; i++)
+        {
+            fs.Write(buffer, 0, buffer.Length);
+        }
+    }
+    File.Delete(path);
+    return "Disk stress completed";
+});
+
+app.MapPost("/stress-io", async () =>
+{
+    var tasks = new List<Task>();
+    for (int i = 0; i < 10; i++)
+    {
+        tasks.Add(Task.Run(async () => {
+            using var client = new HttpClient();
+            await client.GetStringAsync("https://httpbin.org/delay/1");
+        }));
+    }
+    await Task.WhenAll(tasks);
+    return "IO stress completed";
+});
+
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
