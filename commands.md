@@ -2,6 +2,7 @@
 
 # 1. Infrastructure
 kubectl config use-context docker-desktop
+kubectl proxy
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 

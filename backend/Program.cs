@@ -25,6 +25,15 @@ builder.Services.AddOpenTelemetry()
         })
     );
         
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.AddOtlpExporter(options =>
+    {
+        options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
+    });
+});
+
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

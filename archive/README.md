@@ -88,7 +88,8 @@ kubectl port-forward -n monitoring svc/signoz-mcp-server 8000:8000
 
 # signoz mcp
 ```
-kubectl apply -f tools/signoz-mcp.yaml
+kubectl apply -f signoz-mcp.deployment.yaml
+kubectl apply -f signoz-mcp.service.yaml
 
 git clone https://github.com/SigNoz/signoz-mcp-server.git
 cd signoz-mcp-server
