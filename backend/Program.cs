@@ -1,9 +1,10 @@
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
-
+    
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService("backend")
@@ -27,6 +28,8 @@ builder.Services.AddOpenTelemetry()
         
 builder.Logging.AddOpenTelemetry(logging =>
 {
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
     logging.AddOtlpExporter(options =>
     {
         options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
