@@ -95,6 +95,11 @@ git clone https://github.com/SigNoz/signoz-mcp-server.git
 cd signoz-mcp-server
 docker build -t signoz-mcp-server:latest .
 
+curl -X POST http://signozmcp.local/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+
+
 Invoke-RestMethod -Uri "http://signozmcp.local/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
 
 {
@@ -108,6 +113,18 @@ Invoke-RestMethod -Uri "http://signozmcp.local/mcp" -Method POST -ContentType "a
 		"--allow-http"
       ]
     }
+  }
+}
+
+{
+  "mcpServers": {
+	  "signoz": {
+	  "command": "/home/shank/.nvm/versions/node/v24.12.0/bin/mcp-remote",
+	  "args": [
+	    "http://signozmcp.local/mcp",
+	    "--allow-http"
+	  ]
+	}
   }
 }
 
@@ -125,5 +142,7 @@ kubectl port-forward -n backend svc/backend 8081:80
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 
+
+/home/shank/.nvm/versions/node/v24.12.0/bin/npx -y mcp-remote http://signozmcp.local/mcp --allow-http
 
 ```
