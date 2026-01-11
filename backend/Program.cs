@@ -1,16 +1,29 @@
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService("backend"))
+    .ConfigureResource(resource => resource
+        .AddService("backend")
+        .AddAttributes(new Dictionary<string, object>
+        {
+            ["deployment.environment"] = "development"
+        }))
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
-        .AddOtlpExporter(options =>
-        {
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(options => {
             options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
-        }));
+        }))
+    .WithMetrics(metrics => metrics
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+        .AddOtlpExporter(options => {
+            options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
+        })
+    );
         
 builder.Services.AddCors(options =>
 {
