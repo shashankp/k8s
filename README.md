@@ -1,4 +1,4 @@
-# setup-k8s.ps1
+# Setup
 
 # 1. Infrastructure
 kubectl config use-context docker-desktop
@@ -57,9 +57,12 @@ curl -X POST http://signozmcp.local/mcp \
 
 Invoke-RestMethod -Uri "http://signozmcp.local/mcp" -Method POST -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' -Headers @{ "Accept" = "application/json" }
 
-# 7. Tuning
-kubectl exec -it -n backend <pod> -- printenv|grep gc
+# 7. Loadtest
+helm uninstall loadtest
 helm install loadtest ./loadtest
 helm upgrade --install loadtest ./loadtest --force
 kubectl logs job/loadtest-k6 -f
 
+
+# 8. Tuning
+kubectl exec -it -n backend <pod> -- printenv|grep gc
