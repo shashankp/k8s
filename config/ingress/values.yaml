@@ -1,0 +1,4 @@
+controller:
+  service:
+    externalTrafficPolicy: "Local"
+    type: LoadBalancer

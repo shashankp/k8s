@@ -1,0 +1,18 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: dotnet-auto-instrumentation
+  namespace: monitoring
+spec:
+  exporter:
+    endpoint: http://signoz-otel-collector.signoz.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.2" # Start with 20% sampling
+  dotnet:
+    env:
+      - name: OTEL_DOTNET_AUTO_HOME
+        value: "/otel-dotnet-auto"

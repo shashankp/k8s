@@ -4,25 +4,41 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
-    
+
+var otelCollectorUrl = builder.Configuration["OTEL_COLLECTOR_URL"] ?? "http://signoz-otel-collector.monitoring.svc.cluster.local:4317";
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;    
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService("backend")
         .AddAttributes(new Dictionary<string, object>
         {
-            ["deployment.environment"] = "development"
+            ["deployment.environment"] = builder.Environment.EnvironmentName
         }))
     .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
+        .AddAspNetCoreInstrumentation(options =>
+        {
+            options.EnrichWithHttpRequest = (activity, request) =>
+            {
+                var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString();
+                activity.SetTag("http.client_ip", ip);
+            };
+        })
         .AddHttpClientInstrumentation()
         .AddOtlpExporter(options => {
-            options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
+            options.Endpoint = new Uri(otelCollectorUrl);
         }))
     .WithMetrics(metrics => metrics
         .AddRuntimeInstrumentation()
         .AddProcessInstrumentation()
         .AddOtlpExporter(options => {
-            options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
+            options.Endpoint = new Uri(otelCollectorUrl);
         })
     );
         
@@ -32,7 +48,7 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.IncludeScopes = true;
     logging.AddOtlpExporter(options =>
     {
-        options.Endpoint = new Uri("http://signoz-otel-collector.monitoring.svc.cluster.local:4317");
+        options.Endpoint = new Uri(otelCollectorUrl);
     });
 });
 
@@ -48,7 +64,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
+app.UseForwardedHeaders();
+
 app.UseCors();
 
 var summaries = new[]
@@ -56,6 +76,13 @@ var summaries = new[]
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
+app.MapHealthChecks("/health");
+app.MapGet("/debug-ip", (HttpContext context) => 
+    new { 
+        RemoteIp = context.Connection.RemoteIpAddress?.ToString(),
+        ForwardedFor = context.Request.Headers["X-Forwarded-For"].ToString()
+    });
+    
 app.MapGet("/weatherforecast", () =>
 {
     var forecast =  Enumerable.Range(1, 5).Select(index =>

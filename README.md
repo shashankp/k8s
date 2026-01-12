@@ -8,6 +8,9 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 # Wait for ingress controller
 kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
+helm upgrade ingress-nginx ingress-nginx/ingress-nginx -f config/ingress/values.yaml
+kubectl apply -f config/ingress/configmap.yaml
+kubectl rollout restart deployment ingress-nginx
 
 # 2. Helm setup
 helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/

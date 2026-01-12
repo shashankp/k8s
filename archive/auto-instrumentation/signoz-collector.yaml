@@ -1,0 +1,31 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: node-monitor-collector
+  namespace: monitoring
+spec:
+  config: |
+    receivers:
+      # Scrapes Node-level metrics (CPU, Memory, Disk)
+      kubeletstats:
+        collection_interval: 20s
+        endpoint: "https://${env:K8S_NODE_NAME}:10250"
+        insecure_skip_verify: true
+    
+    processors:
+      batch:
+      resourcedetection:
+        detectors: [env, system, k8snode]
+
+    exporters:
+      otlp/signoz:
+        endpoint: "signoz-otel-collector.signoz.svc.cluster.local:4317"
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [kubeletstats]
+          processors: [resourcedetection, batch]
+          exporters: [otlp/signoz]

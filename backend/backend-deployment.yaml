@@ -21,6 +21,18 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
           resources:
             requests:
               cpu: "100m"
@@ -31,3 +43,5 @@ spec:
           env:
             - name: DOTNET_gcServer
               value: "0"
+            - name: OTEL_COLLECTOR_URL
+              value: "http://signoz-otel-collector.monitoring.svc.cluster.local:4317"
