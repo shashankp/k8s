@@ -1,11 +1,17 @@
 using Neo4j.Driver;
+using SmartComponents.LocalEmbeddings;
+
 namespace CsParser;
+
 public class GraphDbService
 {
     private readonly IDriver _driver;
+    private readonly LocalEmbedder _embedder;
+
     public GraphDbService(IDriver driver)
     {
         _driver = driver;
+        _embedder = new LocalEmbedder();
     }
 
     public async Task Backup()
@@ -32,8 +38,8 @@ public class GraphDbService
     {
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
-            "CREATE (n:Record {name: $name, namespace: $nameSpace, code: $code})",
-            new { name, nameSpace, code }
+            "CREATE (n:Record {name: $name, namespace: $nameSpace, code: $code, embedding: $embedding})",
+            new { name, nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
         );
         Console.WriteLine($"Record: {name}");
     }
@@ -42,8 +48,8 @@ public class GraphDbService
     {
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
-            "CREATE (n:Class {name: $name, namespace: $nameSpace, code: $code})",
-            new { name, nameSpace, code }
+            "CREATE (n:Class {name: $name, namespace: $nameSpace, code: $code, embedding: $embedding})",
+            new { name, nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
         );
         Console.WriteLine($"Class: {name}");
     }
@@ -59,5 +65,26 @@ public class GraphDbService
             new { recordName, typeName }
         );
         Console.WriteLine($"    Type dependency from {recordName} to {typeName}");
+    }
+
+    public async Task CreateInheritance(string className, string baseTypeName)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (c:Class {name: $className}) " +
+            "MERGE (b:Type {name: $baseTypeName}) " +
+            "MERGE (c)-[:INHERITS]->(b)",
+            new { className, baseTypeName });
+    }
+
+    public async Task CreateMethodCall(string fromClass, string methodName)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (m:Method {name: $methodName}) " +
+            "WITH m " +
+            "MATCH (c:Class {name: $fromClass}) " +
+            "MERGE (c)-[:CALLS]->(m)",
+            new { fromClass, methodName });
     }
 }

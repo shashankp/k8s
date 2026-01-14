@@ -14,6 +14,7 @@ var neo4jPassword = Environment.GetEnvironmentVariable("NEO4J_PASSWORD");
 var driver = GraphDatabase.Driver(neo4jUrl, AuthTokens.Basic(neo4jUser, neo4jPassword));
 var graphDbService = new GraphDbService(driver);
 graphDbService.Backup().Wait();
+graphDbService.ClearDatabase().Wait();
 
 MSBuildLocator.RegisterDefaults();
 using var workspace = MSBuildWorkspace.Create();
@@ -41,6 +42,19 @@ foreach (var project in solution.Projects)
             var namespaceDecl = classDecl.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
             var namespaceName = namespaceDecl != null ? namespaceDecl.Name.ToString() : "Global";
             await graphDbService.CreateRecordNodeAsync(classDecl.Identifier.ValueText, namespaceName, classDecl.ToString());
+
+            var baseType = classDecl.BaseList?.Types.FirstOrDefault()?.Type.ToString();
+            if (!string.IsNullOrEmpty(baseType))
+            {
+                await graphDbService.CreateInheritance(classDecl.Identifier.Text, baseType);
+            }
+
+            var classProperties = classDecl.Members.OfType<PropertyDeclarationSyntax>();
+            foreach (var prop in classProperties)
+            {
+                var typeName = prop.Type.ToString();
+                await graphDbService.CreateDependency(classDecl.Identifier.Text, typeName);
+            }
         }
 
         var records = root?.DescendantNodes().OfType<RecordDeclarationSyntax>();
@@ -55,6 +69,19 @@ foreach (var project in solution.Projects)
             {
                 if (prop.Type == null) continue;
                 await graphDbService.CreateDependency(recordDecl.Identifier.ValueText, prop.Type.ToString());
+            }
+        }
+
+        var methodCalls = root.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        if (methodCalls == null) continue;
+        foreach (var call in methodCalls)
+        {
+            var methodName = call.Expression.ToString();
+            var containingMethod = call.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+            var containingClass = call.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            if (containingClass != null && !string.IsNullOrEmpty(methodName))
+            {
+                await graphDbService.CreateMethodCall(containingClass.Identifier.Text, methodName);
             }
         }
     }
