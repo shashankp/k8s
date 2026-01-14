@@ -1,0 +1,10 @@
+neo4j:
+  name: "graphdb"
+  password: "codegraph"
+  edition: "community"
+  resources:
+    cpu: "1"
+    memory: "2Gi"
+volumes:
+  data:
+    mode: "defaultStorageClass"

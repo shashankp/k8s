@@ -69,3 +69,10 @@ kubectl logs job/loadtest-k6 -f
 
 # 8. Tuning
 kubectl exec -it -n backend <pod> -- printenv|grep gc
+
+# GraphDB
+helm repo add neo4j https://helm.neo4j.com/neo4j
+helm repo update
+kubectl create namespace graphdb
+helm install graphdb neo4j/neo4j --namespace graphdb -f config/graphdb/values.yaml
+//kubectl port-forward pod/graphdb-0 7474:7474 7687:7687 -n graphdb
