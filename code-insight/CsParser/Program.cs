@@ -50,7 +50,10 @@ foreach (var project in solution.Projects)
             var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
             var fullName = classSymbol?.ToDisplayString() ?? classDecl.Identifier.Text;
             var namespaceName = classSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
-            await graphDbService.CreateClassNodeAsync(classDecl.Identifier.ValueText, namespaceName, classDecl.ToString());
+            await graphDbService.CreateClassNodeAsync(classDecl.Identifier.ValueText, 
+                namespaceName, 
+                classDecl.ToString(),
+                document.FilePath ?? "Unknown");
 
             if (classSymbol?.BaseType != null && classSymbol.BaseType.SpecialType != SpecialType.System_Object)
             {
@@ -83,7 +86,8 @@ foreach (var project in solution.Projects)
             var fullName = recordSymbol?.ToDisplayString() ?? recordDecl.Identifier.Text;
             var namespaceName = recordSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
 
-            await graphDbService.CreateRecordNodeAsync(recordDecl.Identifier.ValueText, namespaceName, recordDecl.ToString());
+            await graphDbService.CreateRecordNodeAsync(recordDecl.Identifier.ValueText, 
+                namespaceName, recordDecl.ToString(), document.FilePath ?? "Unknown");
 
             var properties = recordDecl.ParameterList?.Parameters;
             foreach (var prop in properties ?? Enumerable.Empty<ParameterSyntax>())

@@ -34,22 +34,22 @@ public class GraphDbService
         await session.RunAsync("MATCH (n) DETACH DELETE n");
     }
 
-    public async Task CreateRecordNodeAsync(string name, string nameSpace, string code)
+    public async Task CreateRecordNodeAsync(string name, string nameSpace, string code, string filePath)
     {
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
-            "CREATE (n:Record {sname: $name, shortName: $shortName, namespace: $nameSpace, code: $code, embedding: $embedding})",
-            new { name = name, shortName = Utils.GetShortName(name), nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
+            "CREATE (n:Record {sname: $name, shortName: $shortName, namespace: $nameSpace, code: $code, embedding: $embedding, filePath: $filePath})",
+            new { name = name, shortName = Utils.GetShortName(name), nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray(), filePath }
         );
         Console.WriteLine($"Record: {name}");
     }
 
-    public async Task CreateClassNodeAsync(string name, string nameSpace, string code)
+    public async Task CreateClassNodeAsync(string name, string nameSpace, string code, string filePath)
     {
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
-            "CREATE (n:Class {name: $name, shortName: $shortName, namespace: $nameSpace, code: $code, embedding: $embedding})",
-            new { name = name, shortName = Utils.GetShortName(name), nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
+            "CREATE (n:Class {name: $name, shortName: $shortName, namespace: $nameSpace, code: $code, embedding: $embedding, filePath: $filePath})",
+            new { name = name, shortName = Utils.GetShortName(name), nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray(), filePath }
         );
         Console.WriteLine($"Class: {name}");
     }

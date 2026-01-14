@@ -1,0 +1,8 @@
+## Search
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "question": "authentication",
+  "top_k": 5
+}
