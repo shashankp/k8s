@@ -141,6 +141,36 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         
         return [types.TextContent(type="text", text=str(neighbors))]
 
+@app.list_prompts()
+async def list_prompts() -> list[types.Prompt]:
+    return [
+        types.Prompt(
+            name="code_analysis",
+            description="Analyze code and build unit tests using GraphRAG",
+            arguments=[]
+        )
+    ]
+
+@app.get_prompt()
+async def get_prompt(name: str, arguments: dict) -> types.GetPromptResult:
+    if name == "code_analysis":
+        return types.GetPromptResult(
+            messages=[
+                types.PromptMessage(
+                    role="user",
+                    content=types.TextContent(
+                        type="text",
+                        text="""When analyzing code or writing unit tests:
+1. Use search_code to find relevant classes
+2. Use get_relationships to understand dependencies
+3. Use get_node for specific details
+4. Check HAS_ISSUE relationships for known problems
+5. Base tests on actual code structure"""
+                    )
+                )
+            ]
+        )
+
 async def main():
     async with stdio_server() as (read_stream, write_stream):
         await app.run(
