@@ -38,8 +38,8 @@ public class GraphDbService
     {
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
-            "CREATE (n:Record {name: $name, namespace: $nameSpace, code: $code, embedding: $embedding})",
-            new { name, nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
+            "CREATE (n:Record {sname: $name, shortName: $shortName, namespace: $nameSpace, code: $code, embedding: $embedding})",
+            new { name = name, shortName = Utils.GetShortName(name), nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
         );
         Console.WriteLine($"Record: {name}");
     }
@@ -48,8 +48,8 @@ public class GraphDbService
     {
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
-            "CREATE (n:Class {name: $name, namespace: $nameSpace, code: $code, embedding: $embedding})",
-            new { name, nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
+            "CREATE (n:Class {name: $name, shortName: $shortName, namespace: $nameSpace, code: $code, embedding: $embedding})",
+            new { name = name, shortName = Utils.GetShortName(name), nameSpace, code, embedding = _embedder.Embed(code).Values.ToArray() }
         );
         Console.WriteLine($"Class: {name}");
     }
@@ -87,4 +87,26 @@ public class GraphDbService
             "MERGE (c)-[:CALLS]->(m)",
             new { fromClass, methodName });
     }
+
+    public async Task TagGodClassAsync(string fullName)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MATCH (c {name: $fullName}) SET c:GodClass",
+            new { fullName }
+        );
+    }
+
+    public async Task CreateDiagnosticIssue(string className, string diagnosticId, string message, string severity, string category)
+    {
+        Console.WriteLine($"    Creating diagnostic issue {diagnosticId} for {className}");
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (d:Diagnostic {id: $diagnosticId, message: $message, severity: $severity, category: $category}) " +
+            "WITH d " +
+            "MATCH (c:Class {name: $className}) " +
+            "MERGE (c)-[:HAS_ISSUE]->(d)",
+            new { className, diagnosticId, message, severity, category });
+    }
+
 }

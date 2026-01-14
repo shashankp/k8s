@@ -27,61 +27,121 @@ if (args.Length == 0)
 
 var solutionPath = args[0];
 var solution = await workspace.OpenSolutionAsync(solutionPath);
+const int ClassDependencyThreshold = 10;
 foreach (var project in solution.Projects)
 {
     Console.WriteLine($"Project: {project.Name}");
     var compilation = await project.GetCompilationAsync();
+    if (compilation == null) continue;
+
     foreach (var document in project.Documents)
     {
         var syntaxTree = await document.GetSyntaxTreeAsync();
-        if (syntaxTree == null) continue;
+        var semanticModel = await document.GetSemanticModelAsync();
+        if (semanticModel == null || syntaxTree == null) continue;
+
         var root = await syntaxTree.GetRootAsync();
+        if (root == null) continue;        
+
         var classes = root?.DescendantNodes().OfType<ClassDeclarationSyntax>();
         foreach (var classDecl in classes ?? Enumerable.Empty<ClassDeclarationSyntax>())
         {
-            var namespaceDecl = classDecl.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
-            var namespaceName = namespaceDecl != null ? namespaceDecl.Name.ToString() : "Global";
-            await graphDbService.CreateRecordNodeAsync(classDecl.Identifier.ValueText, namespaceName, classDecl.ToString());
+            var dependencies = new HashSet<string>();
+            var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
+            var fullName = classSymbol?.ToDisplayString() ?? classDecl.Identifier.Text;
+            var namespaceName = classSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
+            await graphDbService.CreateClassNodeAsync(classDecl.Identifier.ValueText, namespaceName, classDecl.ToString());
 
-            var baseType = classDecl.BaseList?.Types.FirstOrDefault()?.Type.ToString();
-            if (!string.IsNullOrEmpty(baseType))
+            if (classSymbol?.BaseType != null && classSymbol.BaseType.SpecialType != SpecialType.System_Object)
             {
-                await graphDbService.CreateInheritance(classDecl.Identifier.Text, baseType);
+                await graphDbService.CreateInheritance(fullName, classSymbol.BaseType.ToDisplayString());
             }
 
             var classProperties = classDecl.Members.OfType<PropertyDeclarationSyntax>();
             foreach (var prop in classProperties)
             {
-                var typeName = prop.Type.ToString();
-                await graphDbService.CreateDependency(classDecl.Identifier.Text, typeName);
+                var propInfo = semanticModel.GetSymbolInfo(prop.Type);
+                var typeSymbol = propInfo.Symbol ?? propInfo.CandidateSymbols.FirstOrDefault();
+                if (typeSymbol == null) continue;
+                dependencies.Add(typeSymbol.ToDisplayString());
+                await graphDbService.CreateDependency(fullName, typeSymbol.ToDisplayString());
+            }
+
+            if (dependencies.Count > ClassDependencyThreshold)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"[Diagnostic] God Class Detected: {fullName} handles {dependencies.Count} unique types.");
+                Console.ResetColor();
+                await graphDbService.TagGodClassAsync(fullName);
             }
         }
 
         var records = root?.DescendantNodes().OfType<RecordDeclarationSyntax>();
         foreach (var recordDecl in records ?? Enumerable.Empty<RecordDeclarationSyntax>())
         {
-            var namespaceDecl = recordDecl.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
-            var namespaceName = namespaceDecl != null ? namespaceDecl.Name.ToString() : "Global";
+            var recordSymbol = semanticModel.GetDeclaredSymbol(recordDecl);
+            var fullName = recordSymbol?.ToDisplayString() ?? recordDecl.Identifier.Text;
+            var namespaceName = recordSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
+
             await graphDbService.CreateRecordNodeAsync(recordDecl.Identifier.ValueText, namespaceName, recordDecl.ToString());
 
             var properties = recordDecl.ParameterList?.Parameters;
-            foreach(var prop in properties ?? Enumerable.Empty<ParameterSyntax>())
+            foreach (var prop in properties ?? Enumerable.Empty<ParameterSyntax>())
             {
                 if (prop.Type == null) continue;
-                await graphDbService.CreateDependency(recordDecl.Identifier.ValueText, prop.Type.ToString());
+                var propInfo = semanticModel.GetSymbolInfo(prop.Type);
+                var typeSymbol = propInfo.Symbol ?? propInfo.CandidateSymbols.FirstOrDefault();
+                if (typeSymbol == null) continue;
+                await graphDbService.CreateDependency(fullName, typeSymbol.ToDisplayString());
             }
         }
 
-        var methodCalls = root.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        var methodCalls = root?.DescendantNodes().OfType<InvocationExpressionSyntax>();
         if (methodCalls == null) continue;
         foreach (var call in methodCalls)
         {
-            var methodName = call.Expression.ToString();
-            var containingMethod = call.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-            var containingClass = call.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
-            if (containingClass != null && !string.IsNullOrEmpty(methodName))
+            var symbolInfo = semanticModel.GetSymbolInfo(call);
+            var methodSymbol = symbolInfo.Symbol as IMethodSymbol;
+            if (methodSymbol == null) continue;
+            var callerClass = call.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            if (callerClass != null)
             {
-                await graphDbService.CreateMethodCall(containingClass.Identifier.Text, methodName);
+                var callerSymbol = semanticModel.GetDeclaredSymbol(callerClass);
+                if (callerSymbol == null) continue;
+                await graphDbService.CreateMethodCall(callerSymbol.ToDisplayString(), methodSymbol.ToDisplayString());
+            }
+        }
+
+        var diagnostics = compilation.GetDiagnostics()
+                .Where(d => d.Location.SourceTree == syntaxTree &&
+                (d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error));
+        foreach (var diagnostic in diagnostics)
+        {
+            var category = diagnostic.Id.StartsWith("SCS") ? "Security"
+                : diagnostic.Id.StartsWith("CA18") || diagnostic.Id.StartsWith("CA19") ? "Performance"
+                : "Compiler";
+
+            var location = diagnostic.Location;
+            if (location.IsInSource)
+            {
+                var node = root.FindNode(location.SourceSpan);
+                if (node == null) continue;
+                var classDecl = node.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+
+                if (classDecl != null)
+                {
+                    var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
+                    var fullName = classSymbol?.ToDisplayString();
+                    if (fullName != null)
+                    {
+                        await graphDbService.CreateDiagnosticIssue(
+                            fullName,
+                            diagnostic.Id,
+                            diagnostic.GetMessage(),
+                            diagnostic.Severity.ToString(),
+                            category);
+                    }
+                }
             }
         }
     }
