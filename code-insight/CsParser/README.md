@@ -1,6 +1,7 @@
 
 ## Run
 ```
+docker pull neo4j
 dotnet restore && dotnet build && dotnet run Sample.sln
 ```
 
