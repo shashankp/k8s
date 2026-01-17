@@ -67,6 +67,16 @@ public class GraphDbService
         Console.WriteLine($"    Type dependency from {recordName} to {typeName}");
     }
 
+    public async Task CreateAttributeUsage(string className, string attributeName)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (a:Attribute {name: $attributeName}) " +
+            "MERGE (c:Class {name: $className}) " +
+            "MERGE (c)-[:HAS_ATTRIBUTE]->(a)",
+            new { className, attributeName });
+    }
+
     public async Task CreateInheritance(string className, string baseTypeName)
     {
         await using var session = _driver.AsyncSession();
@@ -75,6 +85,15 @@ public class GraphDbService
             "MERGE (b:Type {name: $baseTypeName}) " +
             "MERGE (c)-[:INHERITS]->(b)",
             new { className, baseTypeName });
+    }
+    public async Task CreateVariableRead(string methodName, string variableName, string variableType)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (m:Method {name: $methodName}) " +
+            "MERGE (v:Variable {name: $variableName, type: $variableType}) " +
+            "MERGE (m)-[:READS_VARIABLE]->(v)",
+            new { methodName, variableName, variableType });
     }
 
     public async Task CreateMethodCall(string fromClass, string methodName)
@@ -88,6 +107,66 @@ public class GraphDbService
             new { fromClass, methodName });
     }
 
+    public async Task CreateBranchCondition(string methodName, string condition)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (m:Method {name: $methodName}) " +
+            "MERGE (c:Condition {expression: $condition}) " +
+            "MERGE (m)-[:HAS_CONDITION]->(c)",
+            new { methodName, condition });
+    }
+
+    public async Task CreateExceptionHandler(string methodName, string exceptionType)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (m:Method {name: $methodName}) " +
+            "MERGE (e:Exception {name: $exceptionType}) " +
+            "MERGE (m)-[:CATCHES]->(e)",
+            new { methodName, exceptionType });
+    }
+
+    public async Task AddBranchingComplexity(string methodName, int branchCount)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MATCH (m:Method {name: $methodName}) " +
+            "SET m.branchCount = $branchCount",
+            new { methodName, branchCount });
+    }
+
+    public async Task CreateInterfaceImplementation(string className, string interfaceName)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (i:Interface {name: $interfaceName}) " +
+            "MERGE (c:Class {name: $className}) " +
+            "MERGE (c)-[:IMPLEMENTS]->(i)",
+            new { className, interfaceName });
+    }
+
+    public async Task CreateMethodReturnType(string methodName, string returnType)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (m:Method {name: $methodName}) " +
+            "MERGE (t:Type {name: $returnType}) " +
+            "MERGE (m)-[:RETURNS]->(t)",
+            new { methodName, returnType });
+    }
+
+    public async Task CreateMethodParameter(string methodName, string paramType)
+    {
+        await using var session = _driver.AsyncSession();
+        await session.RunAsync(
+            "MERGE (m:Method {name: $methodName}) " +
+            "MERGE (t:Type {name: $paramType}) " +
+            "MERGE (m)-[:HAS_PARAMETER]->(t)",
+            new { methodName, paramType });
+    }
+
+
     public async Task TagGodClassAsync(string fullName)
     {
         await using var session = _driver.AsyncSession();
@@ -99,7 +178,7 @@ public class GraphDbService
 
     public async Task CreateDiagnosticIssue(string className, string diagnosticId, string message, string severity, string category)
     {
-        Console.WriteLine($"    Creating diagnostic issue {diagnosticId} for {className}");
+        //Console.WriteLine($"    Creating diagnostic issue {diagnosticId} for {className}");
         await using var session = _driver.AsyncSession();
         await session.RunAsync(
             "MERGE (d:Diagnostic {id: $diagnosticId, message: $message, severity: $severity, category: $category}) " +

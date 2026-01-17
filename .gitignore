@@ -3,3 +3,5 @@
 **/bin
 **/.vs
 **/*.user
+**/.venv
+**/__pycache__/
